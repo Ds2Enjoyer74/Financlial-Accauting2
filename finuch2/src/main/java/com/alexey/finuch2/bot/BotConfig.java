@@ -20,6 +20,7 @@ public class BotConfig {
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
             telegramBotsApi.registerBot(telegramBot);
         } catch (TelegramApiException e) {
+            //это кал который ни о чем не говорит, добавь сюда sl4j logger и пиши в log.error()
             e.printStackTrace();
         }
     }

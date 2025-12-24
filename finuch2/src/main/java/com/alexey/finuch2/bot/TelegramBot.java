@@ -18,6 +18,9 @@ import java.util.Map;
 @Component
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 public class TelegramBot extends TelegramLongPollingBot {
+
+    // эти три мапки утащи в отдельный класс UserStateService и логика мутки со стейтом должна быть в нем
+    // это Single responsibility из SOLID
     private final Map<Long, UserState> userStates = new HashMap<>();
     private final Map<Long, List<UserClass>> userClassMap = new HashMap<>();
     private final Map<Long, UserClass> currentDraft = new HashMap<>();
@@ -25,17 +28,25 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        // здесь нужны классы обертки чтобы ты из апдейта вот с помощью этих ифов мог создавать нужные объекты оберток,
+        // юзай Factory pattern
         if (update.hasMessage() && update.getMessage().hasText()) {
            String messageText = update.getMessage().getText();
            long chatId = update.getMessage().getChatId();
 
            switch (messageText) {
                case "/start":
+                   //это тоже должно уйти вместе с мапами в UserStateService
                    userStates.put(chatId, UserState.WAITING_FOR_INPUT);
+                   // здесь ты вызываешь пустой конструктор которорго у тебя по сути не существует,
+                   // либо создай либо воткни инпут сюда
+                   //и это тоже должно уйти вместе с мапами в UserStateService
                    currentDraft.put(chatId, new UserClass());
+                   //вот это тут можно оставить, ибо это уже бота часть
                    startCommandRecieved(chatId);
                    break;
 
+                   // гет можно оставить и тащить из UserStateService
                    UserState state = userStates.get(chatId);
                    if(state == null) {
                        sendMessage( chatId, "press /start, dude");
@@ -43,15 +54,21 @@ public class TelegramBot extends TelegramLongPollingBot {
                    switch (state) {
                        case WAITING_FOR_INPUT -> {
                            UserClass draft = currentDraft.get(chatId);
+                           // здесь у тебя такого поля даже нет в UserClass и переменной message нигде нет в скоупе
                            draft.setName(message.trim());
                            userStates.put(chatId, UserState.WAITING_FOR_APPROVAL);
+
+                           //это оставляй, а остальное выше тоже часть логики UserStateService
                            sendMessage(chatId, "Are you sure?");
                        }
                        case WAITING_FOR_APPROVAL -> {
                            try {
                                //Я, пока, хз
+                               //переменной message нигде нет в скоупе
                                boolean approval = String (message.trim());
                                UserClass current = currentDraft.get(chatId);
+
+                               //это вообще полная дичь)))
                                current(approval);
 
                                userClassMap
@@ -59,6 +76,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                                        .add(current);
                                currentDraft.remove(chatId);
                                userStates.remove(chatId);
+
+                               //это оставляй, а остальное выше тоже часть логики UserStateService
                                sendMessage(chatId, "You approved this!");
                            }
                        }
@@ -106,6 +125,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
 
+    //это утащи вообще в отдельный пакет с именем ui и в отдельный класс для создания кнопок и прочей шляпы,
+    // назови хз типо BotUiService или что-то типо этого
     public static SendMessage sendInlineKeyboardMessage(long chatId) {
         //Inline keyboard here
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -130,11 +151,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
 
+    //это не секурно, я прям щас могу твоего бота тогда спиздить утащи это в конфиги и не пуш никогда
     @Override
     public String getBotUsername() {
         return "@AgregatorPriceForYou_bot";
     }
 
+    //это не секурно, я прям щас могу твоего бота тогда спиздить утащи это в конфиги и не пуш никогда
     @Override
     public String getBotToken() {
         return "8437355068:AAHnzXW8GhL_zzT12LQTM1-ubEB-JYKDKY0";

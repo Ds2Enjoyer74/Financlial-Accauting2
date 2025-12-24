@@ -1,5 +1,6 @@
 package com.alexey.finuch2.bot;
 
+//юзай Lombok
 public class UserClass {
     private final String input;
     private boolean isApproved;
@@ -20,5 +21,5 @@ public class UserClass {
         isApproved = approved;
     }
 
-
+//лишний отступ
 }
